@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Animal Farm Chapter 7 — Escape Room</title>
+<link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --parchment: #fdf6e3;
+  --parchment2: #f5e9c8;
+  --ink: #1a1208;
+  --red: #8b1a1a;
+  --red-dark: #6a1212;
+  --gold: #a07c10;
+  --green: #1a4a10;
+  --muted: #4a3a1a;
+  --border: #7a5a20;
+  --btn-bg: #ffffff;
+  --btn-border: #5a4010;
+  --btn-text: #1a1208;
+  --btn-hover: #f0e8cc;
+  --correct-bg: #d4edca;
+  --correct-border: #1a4a10;
+  --correct-text: #0f2d08;
+  --wrong-bg: #f7d6d6;
+  --wrong-border: #8b1a1a;
+  --wrong-text: #5a0a0a;
+  --fb-correct-bg: #c8e8bc;
+  --fb-wrong-bg: #f0c8c8;
+}
+
+html, body {
+  background: #f0ece0;
+  font-family: 'Arial Narrow', Arial, sans-serif;
+  font-size: 14px;
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 1.5rem 1rem 3rem;
+}
+
+#escape-root {
+  background: #1a1208;
+  width: 100%;
+  max-width: 740px;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.35);
+}
+
+.screen { display: none; flex-direction: column; min-height: 580px; }
+.screen.active { display: flex; }
+
+/* ── CIPHER BAR (persistent across rooms) ── */
+#cipher-bar {
+  background: #0e0a03;
+  border-bottom: 2px solid #6a4a08;
+  padding: 0.7rem 1.4rem 0.8rem;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  flex-shrink: 0;
+}
+#cipher-bar.visible { display: flex; }
+.cipher-label {
+  font-family: 'Arial Narrow', Arial, sans-serif;
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #a07c10;
+  font-weight: 700;
+}
+.cipher-tiles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  justify-content: center;
+}
+.cipher-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.cipher-letter {
+  width: 28px; height: 32px;
+  background: #2a1e08;
+  border: 1.5px solid #5a4010;
+  border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Arial Narrow', Arial, sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #2a1e08;
+  transition: all 0.4s ease;
+  position: relative;
+  overflow: hidden;
+}
+.cipher-letter.space-tile {
+  background: transparent;
+  border-color: transparent;
+  width: 12px;
+}
+.cipher-letter.revealed {
+  background: #e8c84a;
+  border-color: #c4a020;
+  color: #1a1208;
+  animation: popIn 0.35s ease;
+}
+@keyframes popIn {
+  0%   { transform: scale(0.6); opacity: 0; }
+  70%  { transform: scale(1.15); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.cipher-number {
+  font-family: 'Arial Narrow', Arial, sans-serif;
+  font-size: 0.6rem;
+  color: #7a6040;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.cipher-progress {
+  font-family: 'Arial Narrow', Arial, sans-serif;
+  font-size: 0.72rem;
+  color: #8a6820;
+  letter-spacing: 0.05em;
+}
+
+/* ── INTRO ── */
+#screen-intro {
+  background: #1a1208;
+  align-items: center;
+  justify-content: center;
+  padding: 2.25rem 1.75rem;
+  text-align: center;
+}
+.farm-title {
+  font-family: 'Merriweather', Georgia, serif;
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #e8c84a;
+  margin-bottom: 0.2rem;
+}
+.farm-sub {
+  font-size: 0.85rem;
+  color: #c4a860;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  margin-bottom: 2rem;
+}
+.intro-card {
+  background: var(--parchment);
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  padding: 1.5rem 1.75rem;
+  max-width: 600px;
+  text-align: left;
+}
+.intro-card h2 {
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--red);
+  margin-bottom: 0.75rem;
+  text-align: center;
+  font-weight: 700;
+}
+.intro-card p {
+  font-family: 'Merriweather', Georgia, serif;
+  font-size: 0.9rem;
+  line-height: 1.7;
+  margin-bottom: 0.75rem;
+  color: var(--ink);
+}
+.intro-mechanic {
+  background: #1a1208;
+  border-radius: 6px;
+  padding: 0.85rem 1rem;
+  margin: 0.75rem 0 1rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+.mechanic-icon { font-size: 1.4rem; flex-shrink: 0; margin-top: 1px; }
+.mechanic-text {
+  font-family: 'Merriweather', Georgia, serif;
+  font-size: 0.85rem;
+  line-height: 1.65;
+  color: #e8d8a0;
+}
+.mechanic-text strong { color: #e8c84a; }
+.rooms-list { list-style: none; margin: 0.75rem 0 0; }
+.rooms-list li {
+  display: flex; align-items: flex-start; gap: 0.75rem;
+  padding: 0.45rem 0; border-bottom: 1px solid #c4a87055;
+  font-family: 'Merriweather', Georgia, serif;
+  font-size: 0.87rem; color: var(--ink); line-height: 1.5;
+}
+.rooms-list li:last-child { border-bottom: none; }
+.room-badge {
+  background: var(--red); color: white; border-radius: 50%;
+  width: 26px; height: 26px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.85rem; font-weight: 700; flex-shrink: 0; margin-top: 1px;
+}
+
+/* ── ROOM HEADER ── */
+.room-header {
+  background: #120e04;
+  padding: 0.75rem 1.25rem;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 2px solid #a07c10;
+  flex-shrink: 0;
+}
+.room-label {
+  font-size: 0.7rem; letter-spacing: 0.14em;
+  color: #c4a860; text-transform: uppercase; display: block;
+}
+.room-name {
+  font-size: 1.12rem; font-weight: 700; color: #fdf6e3;
+}
+.progress-dots { display: flex; gap: 7px; align-items: center; }
+.dot {
+  width: 11px; height: 11px; border-radius: 50%;
+  background: #3a2e18; border: 1.5px solid #6a5020;
+  transition: background 0.25s;
+}
+.dot.done { background: #e8c84a; border-color: #e8c84a; }
+
+/* ── ROOM BODY ── */
+.room-body {
+  flex: 1; background: var(--parchment);
+  padding: 1.35rem 1.55rem; overflow-y: auto;
+}
+.room-intro {
+  background: var(--parchment2);
+  border-left: 4px solid var(--red);
+  padding: 0.7rem 1rem; margin-bottom: 1.35rem;
+}
+.room-intro p {
+  font-family: 'Merriweather', Georgia, serif;
+  font-size: 0.87rem; line-height: 1.65; color: var(--ink); font-style: italic;
+}
+
+/* ── LETTER REVEAL HINT (inline per question) ── */
+.letter-hint {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: #1a1208; border-radius: 4px;
+  padding: 3px 8px; margin-bottom: 0.7rem;
+  font-size: 0.7rem; color: #a07c10;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  font-weight: 700;
+}
+.letter-hint-tile {
+  width: 22px; height: 25px;
+  background: #2a1e08; border: 1.5px solid #5a4010;
+  border-radius: 3px; display: flex; align-items: center;
+  justify-content: center;
+  font-size: 0.95rem; font-weight: 700;
+  color: #2a1e08;
+  transition: all 0.4s;
+}
+.letter-hint-tile.revealed { background: #e8c84a; border-color: #c4a020; color: #1a1208; }
+
+/* ── QUESTION BLOCKS ── */
+.question-block {
+  margin-bottom: 1.4rem;
+  background: #ffffff;
+  border: 1.5px solid #b09050;
+  border-radius: 8px;
+  padding: 1rem 1.1rem;
+}
+.question-block.correct { border-color: var(--correct-border); background: var(--correct-bg); }
+.question-block.wrong   { border-color: var(--wrong-border);   background: var(--wrong-bg); }
+
+.q-num {
+  font-size: 0.71rem; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--muted);
+  margin-bottom: 0.3rem; font-weight: 700;
+}
+.q-text {
+  font-family: 'Merriweather', Georgia, serif;
+  font-size: 0.91rem; line-height: 1.65; color: #1a1208; margin-bottom: 0.85rem;
+}
+.quote-block {
+  background: #2a1e08; color: #fdf6e3;
+  border-left: 4px solid #e8c84a;
+  padding: 0.7rem 1rem; margin-bottom: 0.85rem;
+  font-family: 'Merriweather', Georgia, serif;
+  font-style: italic; font-size: 0.87rem; line-height: 1.65;
+}
+.quote-block cite {
+  display: block; font-style: normal; font-size: 0.74rem;
+  color: #e8c84a; margin-top: 0.3rem;
+}
+.options { display: flex; flex-direction: column; gap: 0.45rem; }
+.opt-btn {
+  background: var(--btn-bg); border: 1.5px solid var(--btn-border);
+  border-radius: 5px; padding: 0.58rem 0.9rem;
+  text-align: left; font-family: 'Merriweather', Georgia, serif;
+  font-size: 0.87rem; color: var(--btn-text);
+  cursor: pointer; transition: background 0.12s, border-color 0.12s;
+  line-height: 1.55;
+}
+.opt-btn:hover:not(:disabled) { background: var(--btn-hover); border-color: var(--gold); }
+.opt-btn:disabled { cursor: default; }
+.opt-btn.selected-correct {
+  background: var(--correct-bg); border-color: var(--correct-border);
+  color: var(--correct-text); font-weight: 700;
+}
+.opt-btn.selected-wrong {
+  background: var(--wrong-bg); border-color: var(--wrong-border); color: var(--wrong-text);
+}
+.feedback {
+  margin-top: 0.75rem; padding: 0.62rem 0.9rem;
+  border-radius: 5px; font-family: 'Merriweather', Georgia, serif;
+  font-size: 0.83rem; line-height: 1.6; display: none;
+}
+.feedback.show { display: block; }
+.feedback.correct-fb { background: var(--fb-correct-bg); color: var(--correct-text); border-left: 3px solid var(--green); }
+.feedback.wrong-fb   { background: var(--fb-wrong-bg);   color: var(--wrong-text);   border-left: 3px solid var(--red); }
+
+/* ── ROOM FOOTER ── */
+.room-footer {
+  background: #120e04; padding: 0.8rem 1.55rem;
+  display: flex; align-items: center; justify-content: space-between;
+  border-top: 1px solid #3a2e18; flex-shrink: 0;
+}
+.score-display {
+  font-size: 0.87rem; color: #e8c84a; font-weight: 700; letter-spacing: 0.05em;
+}
+.btn-primary {
+  background: var(--red); color: #fff; border: none; border-radius: 5px;
+  padding: 0.6rem 1.45rem; font-size: 0.92rem; font-weight: 700;
+  letter-spacing: 0.06em; cursor: pointer; transition: background 0.12s;
+}
+.btn-primary:hover { background: var(--red-dark); }
+.btn-primary:disabled { background: #6a5828; color: #c4b080; cursor: default; }
+.btn-gold {
+  background: #a07c10; color: #fff; border: none; border-radius: 5px;
+  padding: 0.65rem 1.75rem; font-size: 0.95rem; font-weight: 700;
+  letter-spacing: 0.06em; cursor: pointer; transition: background 0.12s;
+}
+.btn-gold:hover { background: #7a5e0c; }
+
+/* ── VICTORY ── */
+#screen-victory {
+  background: #0a1005;
+  align-items: center; justify-content: center;
+  padding: 2rem 1.75rem; text-align: center;
+}
+.victory-title {
+  font-family: 'Merriweather', Georgia, serif;
+  font-size: 2.3rem; font-weight: 700; color: #e8c84a; margin-bottom: 0.3rem;
+}
+
+/* ── CIPHER FINAL REVEAL ── */
+.cipher-final {
+  background: #0e0a03;
+  border: 2px solid #a07c10;
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+  margin: 1rem 0 0.5rem;
+  text-align: center;
+  max-width: 560px;
+  width: 100%;
+}
+.cipher-final-label {
+  font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase;
+  color: #a07c10; font-weight: 700; margin-bottom: 0.6rem;
+}
+.cipher-final-tiles {
+  display: flex; flex-wrap: wrap; justify-content: center;
+  gap: 5px; margin-bottom: 0.6rem;
+}
+.cipher-final-tile {
+  width: 34px; height: 38px;
+  background: #e8c84a; border: 1.5px solid #c4a020;
+  border-radius: 5px; display: flex; align-items: center; justify-content: center;
+  font-family: 'Arial Narrow', Arial, sans-serif;
+  font-size: 1.25rem; font-weight: 700; color: #1a1208;
+}
+.cipher-final-tile.space-tile {
+  background: transparent; border-color: transparent; width: 16px;
+}
+.cipher-final-note {
+  font-family: 'Merriweather', Georgia, serif;
+  font-size: 0.82rem; color: #c4a860; font-style: italic; line-height: 1.55;
+}
+
+.victory-card {
+  background: var(--parchment); border: 2px solid #a07c10;
+  border-radius: 8px; padding: 1.4rem 2rem;
+  max-width: 520px; margin-top: 0.75rem; width: 100%;
+}
+.final-score {
+  font-size: 2.3rem; font-weight: 700; color: var(--red); margin: 0.35rem 0;
+}
+.grade-badge {
+  display: inline-block; color: #fff;
+  font-size: 0.9rem; font-weight: 700;
+  padding: 0.3rem 1.1rem; border-radius: 20px;
+  margin-bottom: 0.9rem; letter-spacing: 0.05em;
+}
+.summary-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0.4rem 0; border-bottom: 1px solid #c4a87044;
+  font-family: 'Merriweather', Georgia, serif; font-size: 0.87rem; color: var(--ink);
+}
+.summary-row:last-child { border-bottom: none; }
+.summary-pts { color: var(--red); font-size: 0.95rem; font-weight: 700; }
+</style>
+</head>
+<body>
+<div id="escape-root">
+
+<!-- ══ PERSISTENT CIPHER BAR ══ -->
+<div id="cipher-bar">
+  <div class="cipher-label">🔐 Crack the Code — Escape Phrase</div>
+  <div class="cipher-tiles" id="cipher-tiles-display"></div>
+  <div class="cipher-progress" id="cipher-progress-text">0 of 12 letters revealed</div>
+</div>
+
+<!-- ══ INTRO ══ -->
+<div id="screen-intro" class="screen active">
+  <div class="farm-title">Animal Farm</div>
+  <div class="farm-sub">Chapter Seven — Escape Room</div>
+  <div class="intro-card">
+    <h2>Your Mission</h2>
+    <p>Napoleon has locked down Animal Farm. The confessions have begun, and "Beasts of England" has been abolished. Answer the questions — but that's only half the challenge.</p>
+    <div class="intro-mechanic">
+      <div class="mechanic-icon">🔐</div>
+      <div class="mechanic-text">Every correct answer reveals a <strong>hidden letter</strong> in a coded escape phrase. Get all 12 right and the full phrase unlocks. <strong>Can you crack the code?</strong></div>
+    </div>
+    <ul class="rooms-list">
+      <li><span class="room-badge">1</span><span><strong>The Barn</strong> — Comprehension: explicit and inferred plot events</span></li>
+      <li><span class="room-badge">2</span><span><strong>The Farmhouse</strong> — Propaganda: ethos, pathos, and logos</span></li>
+      <li><span class="room-badge">3</span><span><strong>The Windmill</strong> — Allegory: Animal Farm and Soviet history</span></li>
+    </ul>
+    <div style="text-align:center; margin-top:1.35rem;">
+      <button class="btn-gold" onclick="startGame()">Begin Your Escape</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ROOM 1: COMPREHENSION ══ -->
+<div id="screen-room1" class="screen" style="padding:0; background:var(--parchment);">
+  <div class="room-header">
+    <div>
+      <span class="room-label">Room 1 of 3</span>
+      <span class="room-name">The Barn — Comprehension</span>
+    </div>
+    <div class="progress-dots" id="dots1"></div>
+  </div>
+  <div class="room-body">
+    <div class="room-intro"><p>The barn is cold and quiet. Demonstrate what you know about the explicit events and inferred meanings of Chapter 7 to unlock the door — and reveal your next code letters.</p></div>
+
+    <div class="question-block" id="qb1-1">
+      <div class="q-num">Question 1 — Explicit &nbsp;·&nbsp; <span style="color:#a07c10;">Reveals letter #1</span></div>
+      <div class="q-text">Why does Napoleon order the hens to surrender their eggs at the start of Chapter 7?</div>
+      <div class="options">
+        <button class="opt-btn" onclick="answer(1,1,'A')">A. To celebrate the completion of the windmill</button>
+        <button class="opt-btn" onclick="answer(1,1,'B')">B. To fulfill a contract and sell eggs to Whymper for trade</button>
+        <button class="opt-btn" onclick="answer(1,1,'C')">C. To punish the hens for disobeying a previous order</button>
+        <button class="opt-btn" onclick="answer(1,1,'D')">D. To give Jones a reason to return to the farm</button>
+      </div>
+      <div class="feedback" id="fb1-1"></div>
+    </div>
+
+    <div class="question-block" id="qb1-2">
+      <div class="q-num">Question 2 — Explicit &nbsp;·&nbsp; <span style="color:#a07c10;">Reveals letter #2</span></div>
+      <div class="q-text">How do the hens initially resist Napoleon's order about their eggs?</div>
+      <div class="options">
+        <button class="opt-btn" onclick="answer(1,2,'A')">A. They attack the dogs and refuse to leave the henhouse</button>
+        <button class="opt-btn" onclick="answer(1,2,'B')">B. They fly to the rafters and drop their eggs, smashing them on the floor</button>
+        <button class="opt-btn" onclick="answer(1,2,'C')">C. They hide the eggs underground in the vegetable garden</button>
+        <button class="opt-btn" onclick="answer(1,2,'D')">D. They appeal directly to Boxer to defend them</button>
+      </div>
+      <div class="feedback" id="fb1-2"></div>
+    </div>
+
+    <div class="question-block" id="qb1-3">
+      <div class="q-num">Question 3 — Inferred &nbsp;·&nbsp; <span style="color:#a07c10;">Reveals letter #3</span></div>
+      <div class="q-text">What is the most likely reason Orwell describes dogs growling whenever Napoleon pauses during the public confessions?</div>
+      <div class="options">
+        <button class="opt-btn" onclick="answer(1,3,'A')">A. To show the dogs are genuinely loyal to all the animals</button>
+        <button class="opt-btn" onclick="answer(1,3,'B')">B. To suggest the confessions are coerced through fear rather than genuine guilt</button>
+        <button class="opt-btn" onclick="answer(1,3,'C')">C. To illustrate that the dogs are poorly trained</button>
+        <button class="opt-btn" onclick="answer(1,3,'D')">D. To show the animals are confused by Napoleon's long speeches</button>
+      </div>
+      <div class="feedback" id="fb1-3"></div>
+    </div>
+
+    <div class="question-block" id="qb1-4">
+      <div class="q-num">Question 4 — Inferred &nbsp;·&nbsp; <span style="color:#a07c10;">Reveals letter #4</span></div>
+      <div class="q-text">After the executions, Clover gazes over the farm but cannot put her feelings into words. What does this moment most likely suggest?</div>
+      <div class="options">
+        <button class="opt-btn" onclick="answer(1,4,'A')">A. Clover is grateful to Napoleon and does not know how to thank him</button>
+        <button class="opt-btn" onclick="answer(1,4,'B')">B. The animals have achieved their dream but still feel something is missing</button>
+        <button class="opt-btn" onclick="answer(1,4,'C')">C. The ideals of the Revolution have been betrayed, but the animals cannot articulate why</button>
+        <button class="opt-btn" onclick="answer(1,4,'D')">D. Clover suspects Boxer has been working with Snowball</button>
+      </div>
+      <div class="feedback" id="fb1-4"></div>
+    </div>
+  </div>
+  <div class="room-footer">
+    <div class="score-display" id="score1">Score: 0 / 4</div>
+    <button class="btn-primary" id="btn-next1" onclick="goToRoom(2)" disabled>Next Room</button>
+  </div>
+</div>
+
+<!-- ══ ROOM 2: PROPAGANDA ══ -->
+<div id="screen-room2" class="screen" style="padding:0; background:var(--parchment);">
+  <div class="room-header">
+    <div>
+      <span class="room-label">Room 2 of 3</span>
+      <span class="room-name">The Farmhouse — Propaganda</span>
+    </div>
+    <div class="progress-dots" id="dots2"></div>
+  </div>
+  <div class="room-body">
+    <div class="room-intro"><p>Squealer's posters line the walls. Identify the rhetorical appeals — ethos, pathos, and logos — used to keep the animals in line, and unlock the next code letters.</p></div>
+
+    <div class="question-block" id="qb2-1">
+      <div class="q-num">Question 5 — Identify the appeal &nbsp;·&nbsp; <span style="color:#a07c10;">Reveals letter #5</span></div>
+      <div class="quote-block">"Comrades, do you know who is responsible for this? Do you know the enemy who has come in the night and overthrown our windmill? SNOWBALL!" <cite>— Squealer</cite></div>
+      <div class="q-text">Squealer blames Snowball without providing any evidence. Which appeal does this primarily rely on?</div>
+      <div class="options">
+        <button class="opt-btn" onclick="answer(2,1,'A')">A. Logos — Squealer provides a logical chain of evidence pointing to Snowball</button>
+        <button class="opt-btn" onclick="answer(2,1,'B')">B. Ethos — Squealer cites his credentials as a scientist to prove his claim</button>
+        <button class="opt-btn" onclick="answer(2,1,'C')">C. Pathos — Squealer stirs fear and anger to distract from the lack of evidence</button>
+        <button class="opt-btn" onclick="answer(2,1,'D')">D. Logos — Squealer uses statistics about Snowball's history of betrayal</button>
+      </div>
+      <div class="feedback" id="fb2-1"></div>
+    </div>
+
+    <div class="question-block" id="qb2-2">
+      <div class="q-num">Question 6 — Identify the appeal &nbsp;·&nbsp; <span style="color:#a07c10;">Reveals letter #6</span></div>
+      <div class="quote-block">"Surely, comrades, you do not want Jones to come back?" <cite>— Squealer (repeated throughout Chapter 7)</cite></div>
+      <div class="q-text">This is one of Squealer's most powerful tools. Which appeal is this, and what emotion does it target?</div>
+      <div class="options">
+        <button class="opt-btn" onclick="answer(2,2,'A')">A. Logos — it presents a rational argument about the consequences of disobedience</button>
+        <button class="opt-btn" onclick="answer(2,2,'B')">B. Pathos — it exploits the animals' fear of Jones's return to silence dissent</button>
+        <button class="opt-btn" onclick="answer(2,2,'C')">C. Ethos — it reminds animals of Squealer's authority as Napoleon's spokesperson</button>
+        <button class="opt-btn" onclick="answer(2,2,'D')">D. Logos — it lists historical evidence of Jones's mistreatment of the animals</button>
+      </div>
+      <div class="feedback" id="fb2-2"></div>
+    </div>
+
+    <div class="question-block" id="qb2-3">
+      <div class="q-num">Question 7 — Identify the appeal &nbsp;·&nbsp; <span style="color:#a07c10;">Reveals letter #7</span></div>
+      <div class="quote-block">"Our Leader, Comrade Napoleon... has stated that the output of every class of foodstuff has increased by two hundred per cent." <cite>— Squealer, reading from a list of statistics</cite></div>
+      <div class="q-text">Even though the animals are clearly hungry, Squealer reads production figures they cannot verify. Which appeal is at work here?</div>
+      <div class="options">
+        <button class="opt-btn" onclick="answer(2,3,'A')">A. Pathos — the statistics make the animals feel proud of their work</button>
+        <button class="opt-btn" onclick="answer(2,3,'B')">B. Ethos — Squealer invokes Napoleon's name to make false data seem credible</button>
+        <button class="opt-btn" onclick="answer(2,3,'C')">C. Logos — numerical data appears rational and specific, masking the lie with false precision</button>
+        <button class="opt-btn" onclick="answer(2,3,'D')">D. Ethos — Squealer's personal integrity makes the animals believe every word</button>
+      </div>
+      <div class="feedback" id="fb2-3"></div>
+    </div>
+
+    <div class="question-block" id="qb2-4">
+      <div class="q-num">Question 8 — Evaluate &nbsp;·&nbsp; <span style="color:#a07c10;">Reveals letter #8</span></div>
+      <div class="q-text">Boxer responds to every doubt by saying "Napoleon is always right." This illustrates which failure of critical thinking that propaganda relies on?</div>
+      <div class="options">
+        <button class="opt-btn" onclick="answer(2,4,'A')">A. Ad hominem — attacking the speaker instead of the argument</button>
+        <button class="opt-btn" onclick="answer(2,4,'B')">B. False dichotomy — presenting only two choices when more exist</button>
+        <button class="opt-btn" onclick="answer(2,4,'C')">C. Appeal to authority — accepting a claim as true simply because a powerful figure said it, without examining evidence</button>
+        <button class="opt-btn" onclick="answer(2,4,'D')">D. Circular reasoning — using a conclusion as evidence for itself</button>
+      </div>
+      <div class="feedback" id="fb2-4"></div>
+    </div>
+  </div>
+  <div class="room-footer">
+    <div class="score-display" id="score2">Score: 0 / 4</div>
+    <button class="btn-primary" id="btn-next2" onclick="goToRoom(3)" disabled>Next Room</button>
+  </div>
+</div>
+
+<!-- ══ ROOM 3: ALLEGORY ══ -->
+<div id="screen-room3" class="screen" style="padding:0; background:var(--parchment);">
+  <div class="room-header">
+    <div>
+      <span class="room-label">Room 3 of 3</span>
+      <span class="room-name">The Windmill — Allegory</span>
+    </div>
+    <div class="progress-dots" id="dots3"></div>
+  </div>
+  <div class="room-body">
+    <div class="room-intro"><p>Behind every event in Chapter 7 lies a real historical parallel to the Soviet Union. Crack the final four code letters to complete the escape phrase and break free.</p></div>
+
+    <div class="question-block" id="qb3-1">
+      <div class="q-num">Question 9 — Character allegory &nbsp;·&nbsp; <span style="color:#a07c10;">Reveals letter #9</span></div>
+      <div class="q-text">In Chapter 7, Napoleon has animals executed after they confess to conspiring with Snowball. This most directly parallels which historical event?</div>
+      <div class="options">
+        <button class="opt-btn" onclick="answer(3,1,'A')">A. The Russian Revolution of 1917, when the Tsar was overthrown</button>
+        <button class="opt-btn" onclick="answer(3,1,'B')">B. Stalin's Great Purge (1936–1938), when thousands confessed to treason under duress and were executed</button>
+        <button class="opt-btn" onclick="answer(3,1,'C')">C. The signing of the Nazi-Soviet Pact in 1939</button>
+        <button class="opt-btn" onclick="answer(3,1,'D')">D. Lenin's death in 1924 and the power struggle that followed</button>
+      </div>
+      <div class="feedback" id="fb3-1"></div>
+    </div>
+
+    <div class="question-block" id="qb3-2">
+      <div class="q-num">Question 10 — Symbol allegory &nbsp;·&nbsp; <span style="color:#a07c10;">Reveals letter #10</span></div>
+      <div class="q-text">Snowball is blamed for every setback on the farm even after his expulsion. In Soviet history, this mirrors the treatment of which real figure?</div>
+      <div class="options">
+        <button class="opt-btn" onclick="answer(3,2,'A')">A. Vladimir Lenin, blamed by Stalin for the failures of the New Economic Policy</button>
+        <button class="opt-btn" onclick="answer(3,2,'B')">B. Leon Trotsky, who was exiled by Stalin and used as a scapegoat for Soviet problems</button>
+        <button class="opt-btn" onclick="answer(3,2,'C')">C. Karl Marx, whose writings were reinterpreted to blame him for economic shortfalls</button>
+        <button class="opt-btn" onclick="answer(3,2,'D')">D. Tsar Nicholas II, blamed for all of Russia's troubles after his execution</button>
+      </div>
+      <div class="feedback" id="fb3-2"></div>
+    </div>
+
+    <div class="question-block" id="qb3-3">
+      <div class="q-num">Question 11 — Event allegory &nbsp;·&nbsp; <span style="color:#a07c10;">Reveals letter #11</span></div>
+      <div class="q-text">The hens' rebellion and its brutal suppression most closely represents which aspect of Soviet history?</div>
+      <div class="options">
+        <button class="opt-btn" onclick="answer(3,3,'A')">A. The Bolshevik seizure of the Winter Palace in 1917</button>
+        <button class="opt-btn" onclick="answer(3,3,'B')">B. Stalin's forced collectivization and the crushing of Ukrainian peasants (kulaks) who resisted surrendering their grain</button>
+        <button class="opt-btn" onclick="answer(3,3,'C')">C. The formation of the Soviet secret police (NKVD)</button>
+        <button class="opt-btn" onclick="answer(3,3,'D')">D. Trotsky's organization of the Red Army during the Civil War</button>
+      </div>
+      <div class="feedback" id="fb3-3"></div>
+    </div>
+
+    <div class="question-block" id="qb3-4">
+      <div class="q-num">Question 12 — Synthesis &nbsp;·&nbsp; <span style="color:#a07c10;">Reveals letter #12</span></div>
+      <div class="q-text">Which of the following best states the central warning Orwell conveys through the events of Chapter 7 specifically?</div>
+      <div class="options">
+        <button class="opt-btn" onclick="answer(3,4,'A')">A. Revolutions always succeed if the people are brave enough to fight</button>
+        <button class="opt-btn" onclick="answer(3,4,'B')">B. Animals are inherently incapable of governing themselves</button>
+        <button class="opt-btn" onclick="answer(3,4,'C')">C. Authoritarian regimes maintain power through propaganda, fear, and the revision of history — and the ideals of a revolution can be destroyed by those who claimed to fight for them</button>
+        <button class="opt-btn" onclick="answer(3,4,'D')">D. The working class must always trust its leaders to interpret complex political situations</button>
+      </div>
+      <div class="feedback" id="fb3-4"></div>
+    </div>
+  </div>
+  <div class="room-footer">
+    <div class="score-display" id="score3">Score: 0 / 4</div>
+    <button class="btn-primary" id="btn-next3" onclick="goToVictory()" disabled>See Results</button>
+  </div>
+</div>
+
+<!-- ══ VICTORY ══ -->
+<div id="screen-victory" class="screen">
+  <div class="victory-title">You Escaped!</div>
+  <p style="color:#90c060; font-size:0.88rem; letter-spacing:0.1em; font-weight:700; text-transform:uppercase; margin-top:0.2rem;">Animal Farm Chapter 7 Complete</p>
+
+  <div class="cipher-final" id="cipher-final-block">
+    <div class="cipher-final-label">🔓 Escape Phrase Unlocked</div>
+    <div class="cipher-final-tiles" id="cipher-final-tiles"></div>
+    <div class="cipher-final-note" id="cipher-final-note"></div>
+  </div>
+
+  <div class="victory-card">
+    <p style="font-size:0.78rem; color:#4a3a1a; text-align:center; margin-bottom:0.35rem; letter-spacing:0.06em; text-transform:uppercase;">Final Score</p>
+    <div class="final-score" id="final-score-display">0 / 12</div>
+    <div class="grade-badge" id="grade-display">–</div>
+    <div id="summary-rows"></div>
+    <div style="text-align:center; margin-top:1.35rem;">
+      <button class="btn-gold" onclick="restartGame()">Try Again</button>
+    </div>
+  </div>
+</div>
+
+</div><!-- #escape-root -->
+
+<script>
+/*
+  ESCAPE PHRASE: "ALL ANIMALS ARE EQUAL"  (19 letters, 3 spaces = 22 chars)
+  Letters in order of question number (Q1–Q12):
+    Q1  → A  (pos 0)
+    Q2  → L  (pos 1)
+    Q3  → L  (pos 2)
+    Q4  → A  (pos 4)  [pos 3 is space]
+    Q5  → N  (pos 5)
+    Q6  → I  (pos 6)
+    Q7  → M  (pos 7)
+    Q8  → A  (pos 8)
+    Q9  → L  (pos 9)
+    Q10 → S  (pos 10)
+    Q11 → A  (pos 12) [pos 11 is space]
+    Q12 → R  (pos 13)
+  
+  But we only have 12 questions → reveal 12 letters, leaving 7 letters (E, E, Q, U, A, L + spaces)
+  partially visible to maintain the puzzle feel. We'll grey those out as "still locked."
+
+  Actually: let's do "FOUR LEGS GOOD" — 12 letters (no spaces counted) perfect for 12 questions!
+  F-O-U-R · L-E-G-S · G-O-O-D
+  Display: F O U R _ L E G S _ G O O D  (14 display chars, 12 letters + 2 spaces)
+
+  Question → Letter mapping:
+    Q1  → F  (pos 0)
+    Q2  → O  (pos 1)
+    Q3  → U  (pos 2)
+    Q4  → R  (pos 3)
+    [space pos 4]
+    Q5  → L  (pos 5)
+    Q6  → E  (pos 6)
+    Q7  → G  (pos 7)
+    Q8  → S  (pos 8)
+    [space pos 9]
+    Q9  → G  (pos 10)
+    Q10 → O  (pos 11)
+    Q11 → O  (pos 12)
+    Q12 → D  (pos 13)
+*/
+
+// Phrase definition: array of {char, isSpace, questionIndex (1-based, 0=space)}
+const PHRASE = [
+  {char:'F', isSpace:false, qIndex:1},
+  {char:'O', isSpace:false, qIndex:2},
+  {char:'U', isSpace:false, qIndex:3},
+  {char:'R', isSpace:false, qIndex:4},
+  {char:' ', isSpace:true,  qIndex:0},
+  {char:'L', isSpace:false, qIndex:5},
+  {char:'E', isSpace:false, qIndex:6},
+  {char:'G', isSpace:false, qIndex:7},
+  {char:'S', isSpace:false, qIndex:8},
+  {char:' ', isSpace:true,  qIndex:0},
+  {char:'G', isSpace:false, qIndex:9},
+  {char:'O', isSpace:false, qIndex:10},
+  {char:'O', isSpace:false, qIndex:11},
+  {char:'D', isSpace:false, qIndex:12},
+];
+
+// Map questionIndex → phrase position(s)
+const Q_TO_POSITIONS = {};
+PHRASE.forEach((p, idx) => {
+  if (!p.isSpace) {
+    if (!Q_TO_POSITIONS[p.qIndex]) Q_TO_POSITIONS[p.qIndex] = [];
+    Q_TO_POSITIONS[p.qIndex].push(idx);
+  }
+});
+
+const ANSWERS = {
+  '1-1':{ correct:'B', fb:{ c:'Correct! Napoleon arranged a contract to sell eggs through Whymper — the farm\'s new leadership is exploiting it just as Jones once did.', w:'Not quite. Napoleon orders the eggs surrendered because he has arranged a deal to sell them through Mr. Whymper, the outside trader.' }},
+  '1-2':{ correct:'B', fb:{ c:'Correct! The hens fly to the rafters and smash their eggs on the floor rather than surrender them — a significant act of rebellion that Napoleon crushes by cutting off their rations.', w:'Not quite. The hens fly up to the rafters and drop their eggs so they smash on the floor, destroying them rather than handing them over.' }},
+  '1-3':{ correct:'B', fb:{ c:'Correct! The dogs growling on cue is a staging detail — the confessions are coerced through fear, not genuine admissions of guilt. This mirrors Stalin\'s show trials.', w:'Think more carefully. Dogs growling whenever Napoleon pauses suggests the confessions are scripted and coerced, not sincere.' }},
+  '1-4':{ correct:'C', fb:{ c:'Correct! Clover senses the Revolution has been betrayed but lacks the language or power to say so — capturing the tragedy of ordinary people under authoritarianism.', w:'Look again. Clover\'s inability to name her feelings signals that the Revolution\'s promise has been hollowed out, even if the animals cannot articulate why.' }},
+  '2-1':{ correct:'C', fb:{ c:'Correct! With no evidence, Squealer shouts a name and lets fear and anger fill in the gaps. Textbook pathos — emotional manipulation that bypasses critical thinking.', w:'There is no evidence in Squealer\'s accusation — only emotional intensity. Screaming a name and letting fear do the work is pathos, not logos.' }},
+  '2-2':{ correct:'B', fb:{ c:'Correct! "Surely you don\'t want Jones to come back?" weaponizes the animals\' deepest fear. Any questioning of Napoleon becomes, implicitly, a vote for enslavement.', w:'This question contains no statistics or credentials — it is a pure emotional threat. Fear of Jones\'s return is pathos designed to silence questioning.' }},
+  '2-3':{ correct:'C', fb:{ c:'Correct! Statistics appear rational even when fabricated. Squealer\'s numbers can\'t be verified, but their false precision creates the illusion of logos — a lie dressed up as evidence.', w:'The key is the use of numbers. Statistics look like logos even when invented. Squealer uses false precision to make lies seem scientific and verifiable.' }},
+  '2-4':{ correct:'C', fb:{ c:'Correct! "Napoleon is always right" is a pure appeal to authority — Boxer accepts claims as true because Napoleon said them, never examining the evidence.', w:'When Boxer says "Napoleon is always right," he accepts truth based on who said it, not evidence. That is an appeal to authority.' }},
+  '3-1':{ correct:'B', fb:{ c:'Correct! The public confessions and executions mirror Stalin\'s Great Purge, when party members were forced to confess to invented crimes and then killed.', w:'The mass confessions and executions directly parallel Stalin\'s Great Purge (1936–38), when people were forced to confess to treason and then executed.' }},
+  '3-2':{ correct:'B', fb:{ c:'Correct! Snowball represents Leon Trotsky. After Stalin exiled and later had him assassinated, Trotsky was blamed for every Soviet failure — just as Snowball is here.', w:'Snowball = Leon Trotsky, Stalin\'s rival who was expelled then used as a scapegoat for any failure — a direct parallel to Snowball\'s role in the novel.' }},
+  '3-3':{ correct:'B', fb:{ c:'Correct! Stalin\'s forced collectivization (1929–33) required peasants to surrender their grain. Those who resisted were labeled enemies of the state. The hens\' rebellion is Orwell\'s allegory for this atrocity.', w:'The hens represent the peasants (especially Ukrainian kulaks) who resisted Stalin\'s collectivization — the forced seizure of grain and farmland.' }},
+  '3-4':{ correct:'C', fb:{ c:'Correct! This is Orwell\'s core warning: through propaganda, terror, and erased history, Napoleon becomes everything Old Major warned against. Chapter 7 is where the betrayal becomes irreversible.', w:'Orwell\'s warning through Chapter 7\'s executions and propaganda is that authoritarian leaders use fear and rewritten history to permanently destroy the ideals they once claimed to champion.' }},
+};
+
+const roomScores = {1:0, 2:0, 3:0};
+const answered = {};
+const revealed = {}; // qIndex → true if correct
+const QS = 4;
+// global question index counter: room1 q1=1, room1 q2=2 ... room3 q4=12
+function globalQ(room, q) { return (room - 1) * QS + q; }
+
+// ── BUILD CIPHER BAR ──
+function buildCipherBar() {
+  const container = document.getElementById('cipher-tiles-display');
+  container.innerHTML = '';
+  PHRASE.forEach((p, idx) => {
+    const tile = document.createElement('div');
+    tile.className = 'cipher-tile';
+    if (p.isSpace) {
+      tile.innerHTML = '<div class="cipher-letter space-tile"></div><div class="cipher-number">&nbsp;</div>';
+    } else {
+      tile.innerHTML = `
+        <div class="cipher-letter" id="ctile-${idx}">?</div>
+        <div class="cipher-number">${p.qIndex}</div>`;
+    }
+    container.appendChild(tile);
+  });
+  updateCipherProgress();
+}
+
+function revealCipherLetter(qIndex) {
+  const positions = Q_TO_POSITIONS[qIndex];
+  if (!positions) return;
+  positions.forEach(pos => {
+    const tile = document.getElementById('ctile-' + pos);
+    if (tile) {
+      tile.textContent = PHRASE[pos].char;
+      tile.classList.add('revealed');
+    }
+  });
+  revealed[qIndex] = true;
+  updateCipherProgress();
+}
+
+function updateCipherProgress() {
+  const total = Object.keys(Q_TO_POSITIONS).length; // 12
+  const done = Object.keys(revealed).length;
+  document.getElementById('cipher-progress-text').textContent =
+    done === total
+      ? '🔓 All letters revealed — phrase complete!'
+      : `${done} of ${total} letters revealed`;
+}
+
+// ── GAME FLOW ──
+function startGame() {
+  buildCipherBar();
+  document.getElementById('cipher-bar').classList.add('visible');
+  showScreen('screen-room1');
+  buildDots(1); buildDots(2); buildDots(3);
+}
+
+function buildDots(r) {
+  const el = document.getElementById('dots' + r);
+  if (!el) return;
+  el.innerHTML = '';
+  for (let i = 1; i <= QS; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot'; d.id = 'dot' + r + '-' + i;
+    el.appendChild(d);
+  }
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function answer(room, q, choice) {
+  const key = room + '-' + q;
+  if (answered[key]) return;
+  answered[key] = true;
+  const data = ANSWERS[key];
+  const isCorrect = choice === data.correct;
+  const gq = globalQ(room, q);
+
+  const qBlock = document.getElementById('qb' + room + '-' + q);
+  const fbEl   = document.getElementById('fb' + room + '-' + q);
+  const btns   = qBlock.querySelectorAll('.opt-btn');
+  const letters = ['A','B','C','D'];
+
+  btns.forEach((btn, i) => {
+    btn.disabled = true;
+    if (letters[i] === data.correct) btn.classList.add('selected-correct');
+    else if (letters[i] === choice && !isCorrect) btn.classList.add('selected-wrong');
+  });
+
+  if (isCorrect) {
+    fbEl.textContent = '\u2713 ' + data.fb.c;
+    fbEl.className = 'feedback show correct-fb';
+    qBlock.classList.add('correct');
+    roomScores[room]++;
+    document.getElementById('score' + room).textContent = 'Score: ' + roomScores[room] + ' / ' + QS;
+    // Reveal cipher letter
+    revealCipherLetter(gq);
+  } else {
+    fbEl.textContent = '\u2717 ' + data.fb.w;
+    fbEl.className = 'feedback show wrong-fb';
+    qBlock.classList.add('wrong');
+  }
+
+  const dot = document.getElementById('dot' + room + '-' + q);
+  if (dot) dot.classList.add('done');
+
+  const doneInRoom = Object.keys(answered).filter(k => k.startsWith(room + '-')).length;
+  if (doneInRoom === QS) {
+    document.getElementById('btn-next' + room).disabled = false;
+  }
+}
+
+function goToRoom(n) { showScreen('screen-room' + n); }
+
+function goToVictory() {
+  const total = roomScores[1] + roomScores[2] + roomScores[3];
+  document.getElementById('final-score-display').textContent = total + ' / 12';
+
+  const pct = total / 12;
+  let grade, color;
+  if (pct >= 0.92)      { grade = 'A — Master of the Farm'; color = '#1a4a10'; }
+  else if (pct >= 0.83) { grade = 'B — Sharp Animal';       color = '#0c3a6a'; }
+  else if (pct >= 0.72) { grade = 'C — Getting There';      color = '#7a4010'; }
+  else                  { grade = 'Keep Reviewing';          color = '#7a1010'; }
+  const gb = document.getElementById('grade-display');
+  gb.textContent = grade; gb.style.background = color;
+
+  // Build final cipher display
+  const finalTiles = document.getElementById('cipher-final-tiles');
+  finalTiles.innerHTML = '';
+  PHRASE.forEach(p => {
+    const tile = document.createElement('div');
+    if (p.isSpace) {
+      tile.className = 'cipher-final-tile space-tile';
+    } else {
+      const wasRevealed = revealed[p.qIndex];
+      tile.className = 'cipher-final-tile' + (wasRevealed ? '' : ' locked');
+      tile.textContent = wasRevealed ? p.char : '?';
+      if (!wasRevealed) {
+        tile.style.cssText = 'background:#2a1e08; border-color:#5a4010; color:#2a1e08;';
+      }
+    }
+    finalTiles.appendChild(tile);
+  });
+
+  const noteEl = document.getElementById('cipher-final-note');
+  if (total === 12) {
+    noteEl.innerHTML = 'All 12 letters revealed! This is the animals\' foundational slogan — the principle Napoleon pretends to uphold while systematically dismantling it.';
+  } else {
+    const missed = 12 - total;
+    noteEl.innerHTML = `${missed} letter${missed>1?'s':''} still locked. Answer every question correctly to reveal the complete phrase.`;
+  }
+
+  // Summary rows
+  const names = ['The Barn — Comprehension', 'The Farmhouse — Propaganda', 'The Windmill — Allegory'];
+  const rows = document.getElementById('summary-rows');
+  rows.innerHTML = '';
+  [1,2,3].forEach(r => {
+    const div = document.createElement('div');
+    div.className = 'summary-row';
+    div.innerHTML = '<span>' + names[r-1] + '</span><span class="summary-pts">' + roomScores[r] + ' / ' + QS + '</span>';
+    rows.appendChild(div);
+  });
+  const tr = document.createElement('div');
+  tr.className = 'summary-row';
+  tr.style.cssText = 'font-weight:700; border-top:1px solid #c4a87088; margin-top:4px; padding-top:8px;';
+  tr.innerHTML = '<span>Total</span><span class="summary-pts">' + total + ' / 12</span>';
+  rows.appendChild(tr);
+
+  document.getElementById('cipher-bar').classList.remove('visible');
+  showScreen('screen-victory');
+}
+
+function restartGame() {
+  [1,2,3].forEach(r => roomScores[r] = 0);
+  Object.keys(answered).forEach(k => delete answered[k]);
+  Object.keys(revealed).forEach(k => delete revealed[k]);
+  document.querySelectorAll('.opt-btn').forEach(b => { b.disabled = false; b.className = 'opt-btn'; });
+  document.querySelectorAll('.feedback').forEach(f => { f.className = 'feedback'; f.textContent = ''; });
+  document.querySelectorAll('.question-block').forEach(q => q.classList.remove('correct','wrong'));
+  ['btn-next1','btn-next2','btn-next3'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.disabled = true;
+  });
+  [1,2,3].forEach(r => {
+    document.getElementById('score' + r).textContent = 'Score: 0 / 4';
+    buildDots(r);
+  });
+  document.getElementById('cipher-bar').classList.remove('visible');
+  showScreen('screen-intro');
+}
+</script>
+</body>
+</html>
